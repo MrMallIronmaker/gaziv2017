@@ -8,15 +8,24 @@ output:
     toc_depth: 3
     toc_float:
       collapsed: false
+bibliography: bibliography.bib
 ---
 
 <!-- Replication reports should all use this template to standardize reporting across projects.  These reports will be public supplementary materials that accompany the summary report(s) of the aggregate results. -->
 
 ##Introduction
 
-This paper studies synchrony, "the precise timing and coordination of movements between individuals ... while the nature or similarity of movements is irrelevant." To put it poetically, it is the individual words of body language. Early studies (1970s-1990s) were limited by quality or quantity of data. Individual body motions could only be collected by human coders, proving expensive in time or money. In contrast, in order to collect data on many subjects, the analysis was computational, and computers could only measure motion holistically. VR and today's devices like the Microsoft Kinect can collect nonverbal data with both quality and quantity. The challenge to current research, then, is the methods with which to analyze the data. I plan to use a measure of synchrony in future studies, and so both developing the code to complete a data analysis pipeline and understanding the space and dangers in some of the analyses would be helpful to my future work.
+###Summary and Motivation
+
+This paper studies *nonverbal synchrony*, the natural coordination of body movement between interacting individuals. Nonverbal synchrony is defined as a dynamic quality of movement, measured objectively and automatically, including both simultaneous movement and movement in a short time-lagged window [@Ramseyer2011]. To put it poetically, it is the individual words of body language. 
+Early studies (1970s-1990s) were limited by quality or quantity of data. Individual body motions were collected by human coders, proving expensive in time or money. In contrast, in order to collect data on many subjects, the analysis was computational, and computers only measured motion holistically. 
+Virtual reality tracking and today's devices like the Microsoft Kinect can collect nonverbal data with both quality and quantity. The challenge to current research, then, is finding, validating, and motivating methods with which to analyze the data. 
+I plan to use a measure of synchrony in future studies, and so both developing the code to complete a data analysis pipeline and understanding the space and dangers in some of the analyses would be helpful to my future work.
+
+###Procedure and Challenges
 
 The data pipeline I will replicate mirrors the analysis given in the paper:
+
 1. Smooth and clean the Kinect tracking data. This involves dropping frames and body parts that were not tracked in some frames, and smoothing the remaining data.
 2. Convert position data to the more theoretically and perceptually salient velocity data.
 3. Analyze the joint velocities using principal component analysis (PCA), and verifying their size relative to shuffled data as a control.
@@ -25,6 +34,7 @@ The data pipeline I will replicate mirrors the analysis given in the paper:
 6. Calculate motion motifs by comparing against a time-rotated control dataset.
 
 The results to replicate include:
+
 1. Torso motion is the strongest component in PCA, accounting for 57%-95% of variance
 2. Arm motion is the second strongest component, but it is much weaker.
 3. Parallel-synchronized torso motion and mutual stillness are the two motion motifs.
@@ -34,19 +44,8 @@ The challenges will be both methodological and technical. The method as written 
 
 ### Links
 
-- [Repository]()
-- [Original Paper]()
-
-
-
-- A short justification for your choice of experiment in terms of your research interests or research program (1 paragraph). This justification should tell us why you chose this particular result – this section is especially important if you are choosing a result outside of the standard MTurk/Psych Sci model.
-
-- A description of the stimuli and procedures that will be required to conduct this experiment, and what the challenges will be (1-2 paragraphs).
-
-- A link to the repository and to the original paper (as hosted in your repo). The goal is that we should be able to click on these links and review that your repo is formatted right and look at the original paper. 
-
-
-
+- [Repository](https://github.com/MrMallIronmaker/gaziv2017)
+- [Original Paper](https://github.com/MrMallIronmaker/gaziv2017/blob/master/original_paper/journal.pone.0170786.pdf)
 
 ##Methods
 
@@ -125,3 +124,5 @@ Open the discussion section with a paragraph summarizing the primary result from
 ### Commentary
 
 Add open-ended commentary (if any) reflecting (a) insights from follow-up exploratory analysis, (b) assessment of the meaning of the replication (or not) - e.g., for a failure to replicate, are the differences between original and present study ones that definitely, plausibly, or are unlikely to have been moderators of the result, and (c) discussion of any objections or challenges raised by the current and original authors about the replication attempt.  None of these need to be long.
+
+## References

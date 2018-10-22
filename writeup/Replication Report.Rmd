@@ -49,67 +49,68 @@ The challenges will be both methodological and technical. The method as written 
 
 ##Methods
 
-###Power Analysis
-
-Original effect size, power analysis for samples to achieve 80%, 90%, 95% power to detect that effect size.  Considerations of feasibility for selecting planned sample size.
-
-###Planned Sample
-
-Planned sample size and/or termination rule, sampling frame, known demographics if any, preselection rules if any.
-
-###Materials
-
-All materials - can quote directly from original article - just put the text in quotations and note that this was followed precisely.  Or, quote directly and just point out exceptions to what was described in the original article.
-
-###Procedure	
-
-Can quote directly from original article - just put the text in quotations and note that this was followed precisely.  Or, quote directly and just point out exceptions to what was described in the original article.
-
-###Analysis Plan
-
-Can also quote directly, though it is less often spelled out effectively for an analysis strategy section.  The key is to report an analysis strategy that is as close to the original - data cleaning rules, data exclusion rules, covariates, etc. - as possible.  
-
-**Clarify key analysis of interest here**  You can also pre-specify additional analyses you plan to do.
-
-###Differences from Original Study
-
-Explicitly describe known differences in sample, setting, procedure, and analysis plan from original study.  The goal, of course, is to minimize those differences, but differences will inevitably occur.  Also, note whether such differences are anticipated to make a difference based on claims in the original article or subsequent published research on the conditions for obtaining the effect.
-
-### Methods Addendum (Post Data Collection)
-
-You can comment this section out prior to final report with data collection.
-
-#### Actual Sample
-  Sample size, demographics, data exclusions based on rules spelled out in analysis plan
-
-#### Differences from pre-data collection methods plan
-  Any differences from what was described as the original plan, or “none”.
+The data in question does not need to be collected, because this is a project of reproduction not replication. The data is available at the [Dryad digital repository](https://datadryad.org/resource/doi:10.5061/dryad.804j3).
 
 
-##Results
+## Results
 
+### Data Preparation
 
-### Data preparation
+Because this is a reproducability study, it is important to be precise in the formalization of the data analysis. Therefore, precise mathematial notation is appropriate. Through this process, areas of the paper that are unclear are discovered. Within these areas, assumptions are made explicit rather than left to interpretation. Though mathematical notation can be very _precise_, it can often be _unclear_. Care will be taken to ensure the mathematics given is both precise and clear.
 
-Data preparation following the analysis plan.
-	
-```{r include=F}
-###Data Preparation
+### Defining the Raw Data
+Define $J$ as the set of joints tracked by the Kinect - e.g, head, torso, shoulders, arms, hands, hips, and feet, and define $J_{U}$ as the joints in the upper body.
 
-####Load Relevant Libraries and Functions
+We define the raw Kinect data as a function $X_{raw}:J\times\mathbb{Z}\rightarrow\mathbb{R}^{3}$ that maps a joint at a particular frame to its position in 3D space. Intuitively, this means each joint and frame in the recording has a 3D point associated with it.
 
-####Import data
+### Smoothing
+The first filter applied is based upon the paper text:
 
-#### Data exclusion / filtering
+> To smooth the data we removed position points which deviate discontinuously from their neighbors using a filter that removes the extreme points in a 5-timepoint window before averaging the remaining points.
 
-#### Prepare data for analysis - create columns etc.
-```
+This is formalized with the mathematical function
+
+$$X_{firstFilter}(j,f)=\frac{\sum_{x\in nearby(X_{raw},j,f)}x-\min nearby(X_{raw},j,f)-\max nearby(X_{raw},j,f)}{3}$$
+ 
+
+where $nearby(X,j,f)=\{X(j,f)|i\in\mathbb{Z},f-2\leq i\leq f+2\}$
+ 
+Note that it is ambiguous whether both the maximum and minimum points are taken out, or only one. The paper does not specify the method for choosing which point (min or max) to take out, so I presume both the maximum and minimum are removed. It is also ambiguous what happens if two entries have the same maximum or minimum value. I have made the decision that exactly one is removed, not both. In addition, it is unclear what happens to points that do not have two neighbors in both directions, i.e, the beginning and end. I presume the data is thrown out.
+
+The second filtering step is choosing the median in a five-step window three times.
+
+$$X_{firstMedian}(j,f)=median(nearby(X_{firstFilter},j,f))$$
+$$X_{secondMedian}(j,f)=median(nearby(X_{firstMedian},j,f))$$
+$$X_{smoothed}(j,f)=X_{thirdMedian}(j,f)=median(nearby(X_{secondMedian},j,f))$$
+Again, it is unclear what happens to points that do not have its nearby neighbors, and so I presume the data is thrown out.
+
+Once the data was smoothed, discrete differentiation was performed between steps, 
+$$V(j,f)=FPS\cdot(X_{smoothed}(j,f+1)-X_{smoothed}(j,f))$$
+where FPS is the number of frames per second, i.e, 30. Note that the values of $V(j,f)$ are 3D vectors. 
+
+### PCA Analysis
+To perform PCA among the joints, rather than among the three dimensions for each joint, we collapse the velocity vector to a speed value.
+This is done with a traditional Euclidean norm $S(j,f)=\|V(j,f)\|$.
+These speed vectors are then normalized per joint to a mean of zero and standard deviation of one, i.e:
+$$S_{normalized}(j,f)=\frac{S(j,f)-\mu(S_{all}(j))}{\sigma(S_{all}(j))}$$
+where $S_{all}(j)=\{S(j,i)|0\leq i<f_{max}\}$. Note that in order to do this, some value for $f_{max}$ should be specified. No particular cutoff time is given, so I assume it will be for all available frames of data.
+
+In performing PCA, we specify the vector to be the list of speeds of each upper-body joint at a given frame, i.e:
+
+$$S_{PCA}(f)=\begin{bmatrix}S_{normalized}(\mbox{head},f)\\
+S_{normalized}(\mbox{neck},f)\\
+S_{normalized}(\mbox{left shoulder},f)\\
+\vdots\\
+S_{normalized}(\mbox{right hip},f)
+\end{bmatrix}$$
+
+The resulting set of vectors, $\{S_{PCA}(f),0\leq f<f_{max}\}$, is the subject of PCA analysis.
 
 ### Confirmatory analysis
 
-The analyses as specified in the analysis plan.  
+**Hypothesis 1**: The first principal component will explain between 57% and 95% of variance of the data, and there will be strong loadings on all joints.
 
-*Side-by-side graph with original graph is ideal here*
+**Hypothesis 2**: The second principal component will have strong loadings on the arms for most participants.
 
 ###Exploratory analyses
 

@@ -7,22 +7,22 @@ output:
     toc: yes
     toc_depth: 3
     toc_float:
-      collapsed: false
+      collapsed: no
 bibliography: bibliography.bib
 ---
 
 <!-- Replication reports should all use this template to standardize reporting across projects.  These reports will be public supplementary materials that accompany the summary report(s) of the aggregate results. -->
 
-##Introduction
+#Introduction
 
-###Summary and Motivation
+##Summary and Motivation
 
 This paper studies *nonverbal synchrony*, the natural coordination of body movement between interacting individuals. Nonverbal synchrony is defined as a dynamic quality of movement, measured objectively and automatically, including both simultaneous movement and movement in a short time-lagged window [@Ramseyer2011]. To put it poetically, it is the individual words of body language. 
 Early studies (1970s-1990s) were limited by quality or quantity of data. Individual body motions were collected by human coders, proving expensive in time or money. In contrast, in order to collect data on many subjects, the analysis was computational, and computers only measured motion holistically. 
 Virtual reality tracking and today's devices like the Microsoft Kinect can collect nonverbal data with both quality and quantity. The challenge to current research, then, is finding, validating, and motivating methods with which to analyze the data. 
 I plan to use a measure of synchrony in future studies, and so both developing the code to complete a data analysis pipeline and understanding the space and dangers in some of the analyses would be helpful to my future work.
 
-###Procedure and Challenges
+##Procedure and Challenges
 
 The data pipeline I will replicate mirrors the analysis given in the paper:
 
@@ -42,88 +42,204 @@ The results to replicate include:
 
 The challenges will be both methodological and technical. The method as written appears to be unclear or underspecified at points. This is compounded by the complexity of the analysis. When two results do not match up, it may be an error from method, reporting, understanding, or programming - and if that data analysis had multiple steps before reaching a verifiable value, then a problem can exist in any or all of those steps.
 
-### Links
+## Links
 
 - [Repository](https://github.com/MrMallIronmaker/gaziv2017)
 - [Original Paper](https://github.com/MrMallIronmaker/gaziv2017/blob/master/original_paper/journal.pone.0170786.pdf)
 
-##Methods
+# Methods
 
 The data in question does not need to be collected, because this is a project of reproduction not replication. The data is available at the [Dryad digital repository](https://datadryad.org/resource/doi:10.5061/dryad.804j3).
 
 
-## Results
+# Results
 
-### Data Preparation
+## Data Preparation
 
-Because this is a reproducability study, it is important to be precise in the formalization of the data analysis. Therefore, precise mathematial notation is appropriate. Through this process, areas of the paper that are unclear are discovered. Within these areas, assumptions are made explicit rather than left to interpretation. Though mathematical notation can be very _precise_, it can often be _unclear_. Care will be taken to ensure the mathematics given is both precise and clear.
+Because this is a reproducability study, it is important to be precise in the formalization of the data analysis. Therefore, mathematial notation is appropriate. Through this process, areas of the paper that are underspecified are discovered. Within these areas, assumptions are made explicit rather than left to interpretation. Though mathematical notation can be very _precise_, it can often be _unclear_. Care will be taken to ensure the mathematics given is both precise and clear.
 
 ### Defining the Raw Data
-Define $J$ as the set of joints tracked by the Kinect - e.g, head, torso, shoulders, arms, hands, hips, and feet, and define $J_{U}$ as the joints in the upper body.
+Define $J$ as the set of joints tracked by the Kinect - e.g, head, torso, shoulders, arms, hands, hips, and feet, and define $J_{U}$ as the joints in the upper body. Furthermore, define $P$ as the set of participants in the experiment.
 
-We define the raw Kinect data as a function $X_{raw}:J\times\mathbb{Z}\rightarrow\mathbb{R}^{3}$ that maps a joint at a particular frame to its position in 3D space. Intuitively, this means each joint and frame in the recording has a 3D point associated with it.
+Let the raw Kinect data (step 0) be a function $X_{0}:P\times J\times\mathbb{W}\rightarrow\mathbb{R}^{3}$ that maps a participant's joint at a particular frame to its position in 3D space. Intuitively, this means each joint and frame in the recording has a 3D point associated with it.
 
 ### Smoothing
 The first filter applied is based upon the paper text:
 
 > To smooth the data we removed position points which deviate discontinuously from their neighbors using a filter that removes the extreme points in a 5-timepoint window before averaging the remaining points.
 
-This is formalized with the mathematical function
+This is formalized with the function
 
-$$X_{firstFilter}(j,f)=\frac{\sum_{x\in nearby(X_{raw},j,f)}x-\min nearby(X_{raw},j,f)-\max nearby(X_{raw},j,f)}{3}$$
+$$X_{1}(p,j,f)=\frac{\mbox{sum } nearby(X_{0},p,j,f)-\min nearby(X_{0},p,j,f)-\max nearby(X_{0},p,j,f)}{3}$$
  
 
-where $nearby(X,j,f)=\{X(j,f)|i\in\mathbb{Z},f-2\leq i\leq f+2\}$
+where $nearby(X,p,j,f)=\{X(p,j,f)|i\in\mathbb{Z},f-2\leq i\leq f+2\}$
  
-Note that it is ambiguous whether both the maximum and minimum points are taken out, or only one. The paper does not specify the method for choosing which point (min or max) to take out, so I presume both the maximum and minimum are removed. It is also ambiguous what happens if two entries have the same maximum or minimum value. I have made the decision that exactly one is removed, not both. In addition, it is unclear what happens to points that do not have two neighbors in both directions, i.e, the beginning and end. I presume the data is thrown out.
+Note that it is ambiguous whether both the maximum and minimum points are taken out, or only one. The paper does not specify the method for choosing which point (min or max) to take out, so I presume both the maximum and minimum are removed. It is also ambiguous what happens if two entries have the same maximum or minimum value. I have made the decision that exactly one is removed, not both. In addition, it is unclear what happens to points that do not have two neighbors in both directions, i.e, the beginning and end. One could ignore the beginning and end timesteps, or shorten the window. I presume the data is thrown out.
 
-The second filtering step is choosing the median in a five-step window three times.
+The second filtering step is choosing the median in a five-step window three times. The paper text says:
 
-$$X_{firstMedian}(j,f)=median(nearby(X_{firstFilter},j,f))$$
-$$X_{secondMedian}(j,f)=median(nearby(X_{firstMedian},j,f))$$
-$$X_{smoothed}(j,f)=X_{thirdMedian}(j,f)=median(nearby(X_{secondMedian},j,f))$$
+> We then used three consecutive rounds of a 5-window median filter.
+
+In pseudocode, this is written as:
+```
+define median_filter(X, p, j, f)
+  return median(nearby(X, p, j, f))
+
+old_data <- X_1
+for i=1 up to 3:
+  new_data(p, j, f) <- median_filter(old_data, p,  j, f)
+  old_data <- new_data
+  
+X_2 <- new_data
+```
+
 Again, it is unclear what happens to points that do not have its nearby neighbors, and so I presume the data is thrown out.
 
-Once the data was smoothed, discrete differentiation was performed between steps, 
-$$V(j,f)=FPS\cdot(X_{smoothed}(j,f+1)-X_{smoothed}(j,f))$$
-where FPS is the number of frames per second, i.e, 30. Note that the values of $V(j,f)$ are 3D vectors. 
+The paper goes on to describe that:
+
+> After this smoothing, the data is suitable for differentiation to obtain velocities.
+
+Once the data was smoothed, discrete differentiation was performed between steps
+$$V(p, j,f)=FPS\cdot(X_{2}(p, j,f+1)-X_{2}(p, j,f))$$
+where FPS is the number of frames per second, i.e, 30. This factor is included because the discrete difference between the frames is only $1/FPS$ seconds. Note that the values of $V(j,f)$ are 3D vectors. 
+
+There are other ways of performing differentiation, including different choices of convolution kernels. The one I have chosen is $[1, -1]$, which is simply the change in value between frames. There are other options, e.g, the symmetric difference quotient, where the filter is $[1, 0, -1]$ and the multiplicative factor is $FPS/2$.
 
 ### PCA Analysis
 To perform PCA among the joints, rather than among the three dimensions for each joint, we collapse the velocity vector to a speed value.
-This is done with a traditional Euclidean norm $S(j,f)=\|V(j,f)\|$.
-These speed vectors are then normalized per joint to a mean of zero and standard deviation of one, i.e:
-$$S_{normalized}(j,f)=\frac{S(j,f)-\mu(S_{all}(j))}{\sigma(S_{all}(j))}$$
-where $S_{all}(j)=\{S(j,i)|0\leq i<f_{max}\}$. Note that in order to do this, some value for $f_{max}$ should be specified. No particular cutoff time is given, so I assume it will be for all available frames of data.
+This is done with a traditional Euclidean norm $S_0(p, j,f)=\|V(p, j,f)\|$, according to the text:
+
+> We considered the speed (root of the sum of the squared x, y and z velocities) of each of 13
+upper body joints per participant for time samples acquired throughout the three-round data-
+set. 
+
+The text continues to say
+
+> We normalized the speed of each joint to mean zero and standard deviation of one...
+
+This normalization is done per joint per participant, i.e,
+$$S_{1}(p, j,f)=\frac{S_0(p, j,f)-\mu(S_{all}(p, j))}{\sigma(S_{all}(p, j))}$$
+where $S_{all}(p, j)=\{S_0(p, j,i)|0\leq i<f_{max}\}$. Note that in order to do this, some value for $f_{max}$ should be specified. No particular cutoff time is given, so I assume it will be for all available frames of data.
 
 In performing PCA, we specify the vector to be the list of speeds of each upper-body joint at a given frame, i.e:
 
-$$S_{PCA}(f)=\begin{bmatrix}S_{normalized}(\mbox{head},f)\\
-S_{normalized}(\mbox{neck},f)\\
-S_{normalized}(\mbox{left shoulder},f)\\
+$$
+\vec{S}_2(p, f)=\begin{bmatrix}S_{1}(p, \mbox{head},f)\\
+S_{1}(p, \mbox{neck},f)\\
+S_{1}(p, \mbox{left shoulder},f)\\
 \vdots\\
-S_{normalized}(\mbox{right hip},f)
-\end{bmatrix}$$
+S_{1}(p, \mbox{right hip},f)
+\end{bmatrix}
+$$
 
-The resulting set of vectors, $\{S_{PCA}(f),0\leq f<f_{max}\}$, is the subject of PCA analysis.
+The resulting set of vectors for each participant, $\{\vec{S}_{2}(p, f),0\leq f<f_{max}\}$, is the subject of PCA analysis. The PCA analysis provides evidence for or against Hypothesis 1 and 2, detailed below.
 
-### Confirmatory analysis
+### Determining still, solo, or co-active motion segments
+
+In order to determine still or motion segments, a single value must be compared with a threshold for each participant. The text for determining this threshold says:
+
+> The threshold used for each participant, and each
+round was the maximum of: (1) 15% max speed of the participant in the round and (2) 15%
+max speed of all participants in the entire dataset.
+
+First, it is unclear what the "speed of the participant" is. The speed of each joint of our participant is well-defined, it is $S_1(p,j,f)$. However, our representation of the speed for each participant at each frame, $\vec{S}_{2}(p, f)$, is a vector rather than a scalar, therefore its comparison is not well-defined. 
+
+In the Results section, rather than the Data Analysis section, there is a clue towards this problem. They reduce the complexity of the dataset by focusing upon the torso motion:
+
+> Due to the predominance of PC1, which describes rigid torso motion, and its similarity
+between participants, for the remaining analysis we focused on the motion of the torso of conversants. As a proxy for rigid torso motion, we use the most robustly resolved body coordinates, the two skeletal coordinates at the sides of the pelvis.
+
+Because of this section, I assume the speed for a participant is the speed of the pelvis, $S_{1}(p,\mbox{pelvis},f)$ .
+
+The thresholding is now syntactically correct, and can be expressed in its two parts as such:
+
+$$t_{1}(p)=\max_{0\leq f<f_{max}}\frac{15}{100}S_{1}(p,\mbox{pelvis},f)$$
+
+$$t_{2}(p)=\max_{p'\in P}\max_{0\leq f<f_{max}}\frac{15}{100}S_{1}(p',\mbox{pelvis},f)$$
+
+However, it becomes clear upon inspection that $t_1(p) \leq t_2(p)$ among any participant because the maximum across all participants includes the participant in question. The instruction clarifying that the maximum should be used between the two implies that $t_1(p)$ is entirely useless. 
+It is unlikely that an uncessary step would be expressed in the writeup, therefore either the authors did not forsee this consequence, did not communicate their process clearly, or I am having trouble interpreting it. 
+Clarification from the authors may resolve this issue. [This is a formal way of saying I need to email them.]
+
+Regardless of these difficulties, let us assume a threshold value is chosen represented by $t(p)$. The classification between a still and a moving segment for a particular participant is indicated in the text:
+
+> Using a sliding window of 2-sec, we calculated the RMS of this speed in each window for each
+participant. We then compared it with two corresponding thresholds to mark the segment as
+‘still’, ‘solo’ of either party, or ‘co-active’.
+
+The speed within a particular windows is the RMS of all the participant speeds within that window. Note that the second argument $i$ to $S_{1}(p,\mbox{pelvis},i)$ is a frame number and so the 1-second durations on each side of it are measured in frames per second.
+
+$$S_3(p,f)=RMS( \{ S_{1}(p,\mbox{pelvis},i) , f-FPS<i\leq f+FPS\})$$
+
+The evidence that RMS is the correct method to combine the "participant speed" measures is the text saying:
+
+> Using a sliding window of 2-sec, we calculated the RMS of this speed in each window for each
+participant.
+
+The value $S_3(p, f)$ is then compared to $t(p)$ in order to determine whether a participant is "moving" or "still". If both participants are still, the dyad is "still". If only one is moving, then it is "solo motion". If both are moving, then the dyad is "co-active."
+
+### Classification of Torso Motion to Dyad Modes
+When the dyad is co-active, a further classification is performed. Continuing to focus on the pelvis as an approximation for the torso, as an approximation for the broadest kind of body motion, the text says:
+
+> We therefore define a dyadic coordinate system based on the two torsos in the plane. This system has 6 coordinates, with three coordinates per person: $v_\parallel$ is velocity parallel to the person’s pelvis, $v_+$ is velocity
+perpendicular to the pelvis, and $v_{tang}$ is twist around the center of mass of the pelvis.
+
+Figure 6 in the paper is sufficiently clear as how these values are represented.
+
+Let the torso velocity data be a function $T_{0}:D\times\mathbb{W}\rightarrow\mathbb{R}^{6}$ where $D$ is the set of *dyads*, rather than participants.
+
+In each 2-second window, the PCA is computed on the set of all dyad torso velocities, 
+$$T_1(d, f) = PCA_1(\{T_0(d, i),f-FPS\leq i<f+FPS\})$$
+where $PCA_1$ takes a set of vectors and returns the first principal component. This vector is the dyadic 'motion mode' of that time segment.
+
+In order to transform this continous variable from PCA into a discrete variable, the motion mode is classified with a linear classifier. The discrete mode has a basis of vectors $\bar{p_m}, p_{m,i}\in \{\pm1/\sqrt{2}, 0\}$ denoting the pure mode $m$ characterized by four loadings, parallel and perpendicular for each particiant. The mode $M_0(d,f)$ given to a dyad $d$ at a time frame $f$ is 
+
+$$M_0(d,f) = \max_{m} \|\bar{p_m}\cdot T_1(d,f)\|$$
+
+If one is to take the mathematical definition of $p_{m,i}\in \{\pm1/\sqrt{2}, 0\}$ literally, it appears that no pure-modes loading will ever have a value of zero - if the corresponding velocity value is positive, then having a positive loading will lead to a higher score, and vice versa.
+However, one may notice that parallel and perpendicular modes are never active together in the same participant, and I propose that is the implicit constraint.
+
+### Calculate motion motifs by comparing against a time-rotated control dataset.
+
+In order to test the hypothesis of synchrony, i.e, time-dependent interaction between two people, one must compare against another hypothesis, i.e, people have some motion distribution and any similarities between the two motions is the accidental effect of having similar distributions.
+To test this, the motion modes are calculated upon rotated time segments.
+
+Let $\Delta_f$ be a randomly selected offset greater than one minute. The comparable dataset is:
+$$T_2(d, f, \Delta_f) = PCA_1(\{join(T_0(p_1, i), T_0(p_2,i+\Delta_f)),f-FPS\leq i<f+FPS\})$$
+Thirty values for $\Delta_f$ were chosen, creating thirty datasets. From these datasets, mean and standard deviation of how long each mode is active was calculated. Occurences of modes that are more than 3 standard deviations away from the mean of this generated dataset are determined to be significant.
+
+### Measure dyad individuality
+
+One can operationalize 'dyad individuality' as the distribution of motion modes leading to the results, such that each torso description $T_1(d,f)$ is drawn from a distribution unique to the dyad, i.e:
+
+$$T_1(d, f) \sim M(d), 0\leq f < f_{max}$$
+where $M(d)$ is a function mapping dyads to their distributions.
+
+The test used is the Kolmogorov-Smirnov test, which compares two one-dimensional distributions. The values $T_1(d,f)$ are four-dimensional, however. The process for reduction of dimensionality is not clear, but based upon the caption of Figure 9, the measure is "RMS distance" of the binned 4D spaces detailed [in 2D in Figure 4].
+
+## Confirmatory analysis
 
 **Hypothesis 1**: The first principal component will explain between 57% and 95% of variance of the data, and there will be strong loadings on all joints.
 
 **Hypothesis 2**: The second principal component will have strong loadings on the arms for most participants.
 
-###Exploratory analyses
+**Hypothesis 3**: The significant motion motifs will be parallel-synchronized torso motion in 6 of 12 pairs, and mutual stillness in 4 of 12 pairs.
+
+**Hypothesis 4**: Dyads will be significantly more similar to themselves at a different time than to other participants.
+
+## Exploratory analyses
 
 Any follow-up analyses desired (not required).  
 
-## Discussion
+# Discussion
 
-### Summary of Replication Attempt
+## Summary of Replication Attempt
 
 Open the discussion section with a paragraph summarizing the primary result from the confirmatory analysis and the assessment of whether it replicated, partially replicated, or failed to replicate the original result.  
 
-### Commentary
+## Commentary
 
 Add open-ended commentary (if any) reflecting (a) insights from follow-up exploratory analysis, (b) assessment of the meaning of the replication (or not) - e.g., for a failure to replicate, are the differences between original and present study ones that definitely, plausibly, or are unlikely to have been moderators of the result, and (c) discussion of any objections or challenges raised by the current and original authors about the replication attempt.  None of these need to be long.
 
-## References
+# References

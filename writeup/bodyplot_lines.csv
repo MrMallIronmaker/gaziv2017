@@ -1,0 +1,13 @@
+PointA,PointB
+WristLeft,ElbowLeft
+ElbowLeft,ShoulderLeft
+ShoulderLeft,SpineShoulder
+HipLeft,SpineBase
+WristRight,ElbowRight
+ElbowRight,ShoulderRight
+ShoulderRight,SpineShoulder
+HipRight,SpineBase
+Head,Neck
+Neck,SpineShoulder
+SpineShoulder,SpineMid
+SpineMid,SpineBase

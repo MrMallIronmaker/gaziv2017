@@ -1,0 +1,94 @@
+---
+title: "bodyplot"
+author: "Mark Roman Miller"
+date: "December 5, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE)
+library(tidyverse)
+library(knitr)
+```
+
+```{r bodyplot}
+# This section provides some handy functions for plotting those body part loadings
+# in a pretty, human-like figure. 
+
+# loadings are 
+loadings_tbl <- read_csv('loadings_tbl_full.csv')
+loadings_tbl %>% head(4) %>% kable(digits = 2)
+
+# bodyplot_points.csv specifies each body part's location in the space [-1,1]x[-1,1]
+bodyplot_points <- read_csv('bodyplot_points.csv')
+bodyplot_points %>% head(5) %>% kable()
+
+# bodyplot_lines.csv specifies which of those link with each other.
+bodyplot_links <- read_csv('bodyplot_lines.csv')
+bodyplot_links %>% head(5) %>% kable()
+
+bodyplot_lines <- bodyplot_links %>%
+  mutate(id=1:n()) %>%
+  gather(Point, BodyPart, c("PointA", "PointB")) %>%
+  left_join(bodyplot_points, by="BodyPart") %>%
+  gather(Dimension, Entry, c("X", "Y")) %>%
+  unite(LinePointType, Point, Dimension) %>%
+  select(-c("BodyPart")) %>%
+  spread(LinePointType, Entry)
+bodyplot_lines %>% head(5) %>% kable()
+
+bodyspacify <- function(x) {
+  return(
+    x %>%
+      gather(PC, Loading, starts_with("PC")) %>%
+      group_by(Dyad, Participant, PC) %>%
+      mutate(Loading = Loading * sign(sum(Loading))) %>%
+      full_join(bodyplot_points, by="BodyPart")
+  )
+}
+```
+
+```{r plot_loadings}
+
+# Take the loadings, and add columns to get the points to display in their proper
+# locations on the body, e.g, head at top, arm on right side, etc.
+bodyspace_loadings <- loadings_tbl %>%
+  filter(BodyPart != "ExplainedVariance") %>%
+  bodyspacify() %>%
+  mutate(                            # a hacky way to have titles display as e.g, 10.1
+    pid = Dyad + Participant * 0.1   # for dyad 10 participant 1, without letting numbers
+  )                                  # get ordered lexographically (1 < 10 < 11 < 2)
+  
+bodyspace_loadings %>% head(5) %>% kable()
+
+plot_graphic_loadings <- function (bodyspace_loadings, displayPC) {
+  return(
+    ggplot(data=bodyspace_loadings %>% filter(PC==displayPC)) + 
+      facet_wrap(vars(pid), nrow=4) +
+      geom_segment(
+        aes(x=PointA_X, y=PointA_Y,
+            xend=PointB_X, yend=PointB_Y),
+        data=bodyplot_lines
+      ) +
+      geom_point(size=3, aes(x=X,y=Y,color=Loading)) + 
+      xlim(-1.2, 1.2) +
+      ylim(-1.2, 1.2) +
+      scale_color_gradient2("Factor Loading", low = scales::muted("blue"), mid = "white",
+  high = scales::muted("red")) +
+      coord_fixed() +
+      theme_void() +
+      labs(title = paste("Loadings of", displayPC, "on 24 conversation participants")) +
+      theme(legend.position = "bottom")
+  )
+}
+
+```
+
+```{r pc-plot}
+plot_graphic_loadings(bodyspace_loadings, displayPC="PC1")
+plot_graphic_loadings(bodyspace_loadings, displayPC="PC2")
+plot_graphic_loadings(bodyspace_loadings, displayPC="PC3")
+plot_graphic_loadings(bodyspace_loadings, displayPC="PC4")
+plot_graphic_loadings(bodyspace_loadings, displayPC="PC5")
+```
+

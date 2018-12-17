@@ -1,0 +1,14 @@
+BodyPart,X,Y
+ElbowLeft,-1,-0.4
+ElbowRight,1,-0.4
+Head,0,1
+HipLeft,-0.5,-1
+HipRight,0.5,-1
+Neck,0,0.65
+ShoulderLeft,-0.7,0.4
+ShoulderRight,0.7,0.4
+SpineBase,0,-1
+SpineMid,0,-0.4
+SpineShoulder,0,0.3
+WristLeft,-1,-1
+WristRight,1,-1
